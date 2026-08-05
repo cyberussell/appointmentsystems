@@ -1,0 +1,94 @@
+/* Appointment System landing — animation + glass utilities.
+   All motion is disabled for prefers-reduced-motion users. */
+
+.as-glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.as-glass-strong {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero booking demo: 4 steps + confirmation, one 12s loop */
+  .as-step {
+    opacity: 0.35;
+    animation: as-step 12s infinite;
+  }
+  .as-step:nth-child(1) { animation-delay: 0s; }
+  .as-step:nth-child(2) { animation-delay: 2s; }
+  .as-step:nth-child(3) { animation-delay: 4s; }
+  .as-step:nth-child(4) { animation-delay: 6s; }
+  @keyframes as-step {
+    0%, 100% { opacity: 0.35; }
+    4%, 60% { opacity: 1; }
+    70% { opacity: 0.35; }
+  }
+  .as-step-check {
+    opacity: 0;
+    transform: scale(0.5);
+    animation: as-check 12s infinite;
+  }
+  .as-step:nth-child(1) .as-step-check { animation-delay: 1.2s; }
+  .as-step:nth-child(2) .as-step-check { animation-delay: 3.2s; }
+  .as-step:nth-child(3) .as-step-check { animation-delay: 5.2s; }
+  .as-step:nth-child(4) .as-step-check { animation-delay: 7.2s; }
+  @keyframes as-check {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    3%, 55% { opacity: 1; transform: scale(1); }
+    65% { opacity: 0; }
+  }
+  /* Appointment popping into the mini dashboard, synced to the loop end */
+  .as-appt-pop {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+    animation: as-appt 12s infinite;
+    animation-delay: 8s;
+  }
+  @keyframes as-appt {
+    0%, 100% { opacity: 0; transform: translateY(6px) scale(0.97); }
+    4%, 88% { opacity: 1; transform: translateY(0) scale(1); }
+    96% { opacity: 0; }
+  }
+  /* Problem section chat bubbles, staggered once on view (CSS-only fallback: on load) */
+  .as-chat > * {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: as-chat-in 0.5s ease-out forwards;
+  }
+  .as-chat > *:nth-child(1) { animation-delay: 0.1s; }
+  .as-chat > *:nth-child(2) { animation-delay: 0.5s; }
+  .as-chat > *:nth-child(3) { animation-delay: 0.9s; }
+  .as-chat > *:nth-child(4) { animation-delay: 1.3s; }
+  .as-chat > *:nth-child(5) { animation-delay: 1.7s; }
+  .as-chat > *:nth-child(6) { animation-delay: 2.1s; }
+  @keyframes as-chat-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .as-typing span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: currentColor;
+    margin-right: 3px;
+    animation: as-typing 1.2s infinite;
+  }
+  .as-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .as-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes as-typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-3px); opacity: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .as-step, .as-chat > *, .as-appt-pop { opacity: 1; transform: none; }
+  .as-step-check { opacity: 1; transform: none; }
+}

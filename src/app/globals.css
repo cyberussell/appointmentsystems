@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand colors */
+  --color-navy:   #0F0F1A;
+  --color-navy2:  #111118;
+  --color-navy3:  #18181F;
+  --color-navy4:  #222230;
+  --color-brandRed:    #E8373A;
+  --color-brandYellow: #FFD23F;
+  --color-brandGreen:  #00C97A;
+  --color-brandBlue:   #3B82F6;
+
+  /* Fonts */
+  --font-display: var(--font-syne), sans-serif;
+  --font-body:    var(--font-inter), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
 }
+
+/* Mobile readability floor.
+   Most readers are on phones; some body copy uses small arbitrary Tailwind
+   text sizes (text-[11px] etc) that read fine on desktop but are cramped on
+   small screens. Bump them up slightly below the `md` breakpoint. This sits
+   outside any @layer, so per CSS cascade-layer rules it always wins over
+   Tailwind's layered utility classes — no !important, no per-file edits, and
+   it can't affect `md:` overrides since those only activate at >=768px. */
+@media (max-width: 767px) {
+  [class~="text-[8px]"],
+  [class~="text-[9px]"],
+  [class~="text-[10px]"] { font-size: 13px; }
+  [class~="text-[11px]"] { font-size: 14px; }
+  [class~="text-xs"],
+  [class~="text-[12px]"] { font-size: 15px; }
+  [class~="text-[13px]"] { font-size: 16px; }
+  [class~="text-sm"],
+  [class~="text-[14px]"] { font-size: 17px; }
+  [class~="text-[15px]"] { font-size: 17px; }
+}
+
+/* Card border visibility floor.
+   Cards use very low-opacity white borders (border-white/[0.03]-[0.10]) that
+   are barely visible against the dark background. Same mechanism as the
+   font-size floor above: unlayered CSS always wins over Tailwind's layered
+   utilities, so this applies everywhere without per-file edits. Hover/emphasis
+   variants (hover:border-white/20 etc) are untouched since those are separate
+   class tokens. */
+[class~="border-white/[0.03]"],
+[class~="border-white/[0.04]"],
+[class~="border-white/[0.05]"],
+[class~="border-white/5"] { border-color: rgba(255,255,255,0.14); }
+[class~="border-white/[0.06]"],
+[class~="border-white/[0.07]"],
+[class~="border-white/[0.08]"] { border-color: rgba(255,255,255,0.16); }
+[class~="border-white/[0.10]"],
+[class~="border-white/[0.1]"],
+[class~="border-white/10"] { border-color: rgba(255,255,255,0.18); }
+[class~="border-white/[0.12]"] { border-color: rgba(255,255,255,0.2); }
