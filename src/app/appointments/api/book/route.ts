@@ -33,7 +33,14 @@ export async function GET(request: NextRequest) {
     timezone: (business as Business).timezone,
     serviceId,
     days: 7,
-    limit: 60,
+    // Was 60 — with several active staff all eligible for one service, the
+    // combined slot count across all of them blew past 60 within the first
+    // 1-2 days, so the configured 7-day advance-booking window was
+    // effectively unreachable (confirmed live: 60 slots covered only 2 of
+    // the 7 configured days). 500 comfortably covers the worst case at
+    // today's staff counts (a handful of staff × ~13 slots/day × 8 days,
+    // the loop being inclusive of `days`) with room to grow.
+    limit: 500,
   })
   return NextResponse.json({ slots })
 }
