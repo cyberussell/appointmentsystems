@@ -8,6 +8,7 @@ import type { Service, Staff } from '@/lib/appointment-system/types'
 import ManualAppointmentForm from '@/components/appointment-system/ManualAppointmentForm'
 import RecordPaymentForm from '@/components/appointment-system/RecordPaymentForm'
 import RescheduleForm from '@/components/appointment-system/RescheduleForm'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import AppointmentsMonthGrid, { type MonthDay } from '@/components/appointment-system/AppointmentsMonthGrid'
 import UsageBanner from '@/components/appointment-system/UsageBanner'
 import { canCreateAppointment } from '@/lib/appointment-system/entitlements'
@@ -460,9 +461,9 @@ export default async function AppointmentsPage({
                     <form key={status} action={updateAppointmentStatus}>
                       <input type="hidden" name="id" value={a.id} />
                       <input type="hidden" name="status" value={status} />
-                      <button type="submit" title={label} aria-label={label} className={ICON_BUTTON_CLASS}>
+                      <SubmitButton title={label} aria-label={label} className={ICON_BUTTON_CLASS}>
                         <Icon className="h-4 w-4" aria-hidden />
-                      </button>
+                      </SubmitButton>
                     </form>
                   ))}
                 </>

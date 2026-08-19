@@ -2,6 +2,7 @@ import { TriangleAlert } from 'lucide-react'
 import { FEATURE_LABELS, PLANS } from '@/lib/appointment-system/entitlements'
 import type { PlanTier } from '@/lib/appointment-system/types'
 import { dismissDowngradeNotice } from '@/app/appointments/actions'
+import SubmitButton from './SubmitButton'
 
 // Post-downgrade counterpart to BillingPlanCard's pre-downgrade confirmation
 // — same "here's what changed" facts, just stated after the fact instead of
@@ -21,7 +22,9 @@ export default function DowngradeNotice({ from, to }: { from: PlanTier; to: Plan
           Your plan changed from {fromPlan.name} to {toPlan.name}
         </p>
         <form action={dismissDowngradeNotice}>
-          <button className="shrink-0 text-xs text-amber-300/70 hover:text-amber-200">Dismiss</button>
+          <SubmitButton pendingText="Dismissing…" className="shrink-0 text-xs text-amber-300/70 hover:text-amber-200">
+            Dismiss
+          </SubmitButton>
         </form>
       </div>
       <ul className="mt-1.5 list-disc space-y-1 pl-9">

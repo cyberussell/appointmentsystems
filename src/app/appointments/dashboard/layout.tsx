@@ -3,6 +3,7 @@ import { DoorClosed } from 'lucide-react'
 import { requireBusiness } from '@/lib/appointment-system/auth'
 import { getTerms } from '@/lib/appointment-system/terminology'
 import NavTabs from '@/components/appointment-system/NavTabs'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { PLANS } from '@/lib/appointment-system/entitlements'
 import { signOut } from '../actions'
 
@@ -60,7 +61,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </Link>
             )}
             <form action={signOut}>
-              <button className="text-sm text-slate-400 hover:text-white transition">Log out</button>
+              <SubmitButton pendingText="Logging out…" className="text-sm text-slate-400 hover:text-white transition">
+                Log out
+              </SubmitButton>
             </form>
           </div>
         </div>

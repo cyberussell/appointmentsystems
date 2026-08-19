@@ -3,6 +3,7 @@ import { requireStaffAccess } from '@/lib/appointment-system/auth'
 import { getTerms } from '@/lib/appointment-system/terminology'
 import { formatSlotLabel, wallTimeToUtc } from '@/lib/appointment-system/slots'
 import RecordPaymentForm from '@/components/appointment-system/RecordPaymentForm'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { updateAppointmentStatus } from '../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -181,9 +182,12 @@ function StatusButton({ id, status, label }: { id: string; status: string; label
     <form action={updateAppointmentStatus}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition">
+      <SubmitButton
+        pendingText="…"
+        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition"
+      >
         {label}
-      </button>
+      </SubmitButton>
     </form>
   )
 }

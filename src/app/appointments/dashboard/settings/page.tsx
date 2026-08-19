@@ -9,6 +9,7 @@ import { PLANS, PLAN_ORDER, hasFeature, tierWithFeature } from '@/lib/appointmen
 import { hasConfiguredHours } from '@/lib/appointment-system/slots'
 import { DAY_KEYS, DAY_LABELS, type BusinessHours } from '@/lib/appointment-system/types'
 import { updateBusinessProfile, saveFbConnection, updateClosedNotice, updateBusinessHours } from '../../actions'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,9 +51,12 @@ export default async function SettingsPage() {
               cyberussell.com/appointments/{business.slug}
             </Link>
           </p>
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+          <SubmitButton
+            pendingText="Saving…"
+            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+          >
             Save profile
-          </button>
+          </SubmitButton>
         </form>
         <div className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900 p-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -110,9 +114,12 @@ export default async function SettingsPage() {
               className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
             />
           </label>
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+          <SubmitButton
+            pendingText="Saving…"
+            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+          >
             Save status
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -165,9 +172,12 @@ export default async function SettingsPage() {
               </div>
             )
           })}
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+          <SubmitButton
+            pendingText="Saving…"
+            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+          >
             Save hours
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -260,9 +270,12 @@ export default async function SettingsPage() {
             <Field label="Facebook Page ID" name="fb_page_id" defaultValue={business.fb_page_id ?? ''} required />
             <Field label="Page Access Token" name="fb_page_token" type="password" required />
             <p className="text-xs text-slate-500 break-all">Webhook URL for the Meta app: {webhookUrl}</p>
-            <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400">
+            <SubmitButton
+              pendingText="Saving…"
+              className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+            >
               Save connection
-            </button>
+            </SubmitButton>
           </form>
         ) : (
           <MessengerPreview

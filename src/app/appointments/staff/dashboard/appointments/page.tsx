@@ -6,6 +6,7 @@ import type { Service, Staff } from '@/lib/appointment-system/types'
 import ManualAppointmentForm from '@/components/appointment-system/ManualAppointmentForm'
 import RecordPaymentForm from '@/components/appointment-system/RecordPaymentForm'
 import RescheduleForm from '@/components/appointment-system/RescheduleForm'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { updateAppointmentStatus } from '../../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -134,23 +135,32 @@ export default async function StaffAppointmentsPage() {
                   <form action={updateAppointmentStatus}>
                     <input type="hidden" name="id" value={a.id} />
                     <input type="hidden" name="status" value="completed" />
-                    <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition">
+                    <SubmitButton
+                      pendingText="…"
+                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition"
+                    >
                       Done
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={updateAppointmentStatus}>
                     <input type="hidden" name="id" value={a.id} />
                     <input type="hidden" name="status" value="no_show" />
-                    <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition">
+                    <SubmitButton
+                      pendingText="…"
+                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition"
+                    >
                       No-show
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={updateAppointmentStatus}>
                     <input type="hidden" name="id" value={a.id} />
                     <input type="hidden" name="status" value="cancelled" />
-                    <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition">
+                    <SubmitButton
+                      pendingText="…"
+                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition"
+                    >
                       Cancel
-                    </button>
+                    </SubmitButton>
                   </form>
                 </>
               )}

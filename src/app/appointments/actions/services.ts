@@ -33,6 +33,32 @@ export async function createService(formData: FormData): Promise<void> {
   updateTag(businessPageCacheTag(business.slug))
 }
 
+const updateServiceSchema = z.object({
+  id: z.string().trim().min(1),
+  name: z.string().trim().min(1),
+  duration_min: z.coerce.number().finite().min(5),
+  price: z.coerce.number().finite().min(0).catch(0),
+})
+
+export async function updateService(formData: FormData): Promise<void> {
+  const { supabase, business } = await requireBusiness()
+  const parsed = updateServiceSchema.safeParse({
+    id: formData.get('id'),
+    name: formData.get('name'),
+    duration_min: formData.get('duration_min'),
+    price: formData.get('price'),
+  })
+  if (!parsed.success) return
+  const { id, name, duration_min, price } = parsed.data
+  await supabase
+    .from('services')
+    .update({ name, duration_min: Math.round(duration_min), price })
+    .eq('id', id)
+    .eq('business_id', business.id)
+  revalidatePath('/appointments/dashboard/services')
+  updateTag(businessPageCacheTag(business.slug))
+}
+
 export async function toggleService(formData: FormData): Promise<void> {
   const { supabase, business } = await requireBusiness()
   const id = String(formData.get('id'))

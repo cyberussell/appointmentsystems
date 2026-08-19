@@ -7,6 +7,7 @@ import {
   addBlockedDate,
   deleteBlockedDate,
 } from '../../actions'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,9 +86,12 @@ export default async function AvailabilityPage() {
             defaultValue="17:00"
             className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
           />
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+          <SubmitButton
+            pendingText="Adding…"
+            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+          >
             Add hours
-          </button>
+          </SubmitButton>
         </form>
       )}
 
@@ -106,9 +110,12 @@ export default async function AvailabilityPage() {
             </p>
             <form action={deleteAvailability}>
               <input type="hidden" name="id" value={w.id} />
-              <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition">
+              <SubmitButton
+                pendingText="Removing…"
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition"
+              >
                 Remove
-              </button>
+              </SubmitButton>
             </form>
           </li>
         ))}
@@ -167,9 +174,12 @@ export default async function AvailabilityPage() {
             defaultValue="13:00"
             className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
           />
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+          <SubmitButton
+            pendingText="Adding…"
+            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+          >
             Add break
-          </button>
+          </SubmitButton>
         </form>
       )}
 
@@ -188,9 +198,12 @@ export default async function AvailabilityPage() {
             </p>
             <form action={deleteAvailabilityBreak}>
               <input type="hidden" name="id" value={b.id} />
-              <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition">
+              <SubmitButton
+                pendingText="Removing…"
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition"
+              >
                 Remove
-              </button>
+              </SubmitButton>
             </form>
           </li>
         ))}
@@ -235,9 +248,12 @@ export default async function AvailabilityPage() {
           placeholder="Reason (optional)"
           className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
         />
-        <button className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition">
+        <SubmitButton
+          pendingText="Blocking…"
+          className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
+        >
           Block date
-        </button>
+        </SubmitButton>
       </form>
 
       <ul className="space-y-2">
@@ -256,9 +272,12 @@ export default async function AvailabilityPage() {
             </p>
             <form action={deleteBlockedDate}>
               <input type="hidden" name="id" value={b.id} />
-              <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition">
+              <SubmitButton
+                pendingText="Removing…"
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition"
+              >
                 Remove
-              </button>
+              </SubmitButton>
             </form>
           </li>
         ))}

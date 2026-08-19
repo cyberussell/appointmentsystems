@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { dismissSetupChecklist } from '@/app/appointments/actions'
+import SubmitButton from './SubmitButton'
 
 interface ChecklistStep {
   label: string
@@ -35,7 +36,9 @@ export default function SetupChecklist({
           </p>
         </div>
         <form action={dismissSetupChecklist}>
-          <button className="text-xs text-slate-500 transition hover:text-slate-300">Hide this</button>
+          <SubmitButton pendingText="Hiding…" className="text-xs text-slate-500 transition hover:text-slate-300">
+            Hide this
+          </SubmitButton>
         </form>
       </div>
       {planSummary && <p className="mt-3 text-sm text-slate-400">{planSummary}</p>}

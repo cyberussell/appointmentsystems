@@ -8,6 +8,7 @@ import UsageBanner from '@/components/appointment-system/UsageBanner'
 import UsageMeter from '@/components/appointment-system/UsageMeter'
 import SetupChecklist from '@/components/appointment-system/SetupChecklist'
 import DowngradeNotice from '@/components/appointment-system/DowngradeNotice'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { canCreateAppointment, canAddProvider, PLANS } from '@/lib/appointment-system/entitlements'
 import type { PlanTier } from '@/lib/appointment-system/types'
 import { updateAppointmentStatus } from '../actions'
@@ -291,9 +292,12 @@ function StatusButton({ id, status, label }: { id: string; status: string; label
     <form action={updateAppointmentStatus}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition">
+      <SubmitButton
+        pendingText="…"
+        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition"
+      >
         {label}
-      </button>
+      </SubmitButton>
     </form>
   )
 }

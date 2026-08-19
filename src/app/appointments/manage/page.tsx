@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AuthHeader, AuthFooter } from '@/components/appointment-system/AuthChrome'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,12 +43,12 @@ export default async function ManageEntryPage({
                 placeholder="e.g. 482913"
                 className="w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-center font-mono text-lg tracking-widest text-white placeholder:text-slate-500 focus:border-emerald-400/50 focus:outline-none"
               />
-              <button
-                type="submit"
+              <SubmitButton
+                pendingText="Looking up…"
                 className="w-full rounded-xl bg-emerald-500 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400"
               >
                 Find my booking
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>

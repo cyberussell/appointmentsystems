@@ -8,6 +8,7 @@ import StaffForm from '@/components/appointment-system/StaffForm'
 import StaffInviteForm from '@/components/appointment-system/StaffInviteForm'
 import StaffResendInviteForm from '@/components/appointment-system/StaffResendInviteForm'
 import StaffServicesForm from '@/components/appointment-system/StaffServicesForm'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { toggleStaff, deleteStaff } from '../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -96,15 +97,21 @@ export default async function StaffPage() {
               <form action={toggleStaff}>
                 <input type="hidden" name="id" value={m.id} />
                 <input type="hidden" name="active" value={String(m.active)} />
-                <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition">
+                <SubmitButton
+                  pendingText={m.active ? 'Deactivating…' : 'Activating…'}
+                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 transition"
+                >
                   {m.active ? 'Deactivate' : 'Activate'}
-                </button>
+                </SubmitButton>
               </form>
               <form action={deleteStaff}>
                 <input type="hidden" name="id" value={m.id} />
-                <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition">
+                <SubmitButton
+                  pendingText="Deleting…"
+                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-red-400 hover:border-red-400 transition"
+                >
                   Delete
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </li>

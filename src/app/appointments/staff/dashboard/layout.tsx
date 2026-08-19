@@ -4,6 +4,7 @@ import { requireStaffAccess } from '@/lib/appointment-system/auth'
 import { getTerms } from '@/lib/appointment-system/terminology'
 import { PLANS } from '@/lib/appointment-system/entitlements'
 import NavTabs from '@/components/appointment-system/NavTabs'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { signOut } from '../../actions'
 
 export default async function StaffDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +27,9 @@ export default async function StaffDashboardLayout({ children }: { children: Rea
               {staff.name} · Staff
             </span>
             <form action={signOut}>
-              <button className="text-sm text-slate-400 hover:text-white transition">Log out</button>
+              <SubmitButton pendingText="Logging out…" className="text-sm text-slate-400 hover:text-white transition">
+                Log out
+              </SubmitButton>
             </form>
           </div>
         </div>

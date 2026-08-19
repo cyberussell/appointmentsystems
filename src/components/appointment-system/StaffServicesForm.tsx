@@ -2,6 +2,7 @@
 
 import { setStaffServices } from '@/app/appointments/actions'
 import type { Service } from '@/lib/appointment-system/types'
+import SubmitButton from './SubmitButton'
 
 export default function StaffServicesForm({
   staffId,
@@ -32,12 +33,12 @@ export default function StaffServicesForm({
           </label>
         ))}
       </div>
-      <button
-        type="submit"
+      <SubmitButton
+        pendingText="Saving…"
         className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:border-emerald-400 transition"
       >
         Save
-      </button>
+      </SubmitButton>
     </form>
   )
 }

@@ -2,6 +2,7 @@ import { TriangleAlert } from 'lucide-react'
 import { requireStaffAccess } from '@/lib/appointment-system/auth'
 import { getTerms } from '@/lib/appointment-system/terminology'
 import { hasFeature } from '@/lib/appointment-system/entitlements'
+import SubmitButton from '@/components/appointment-system/SubmitButton'
 import { resumeBot } from '../../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -67,9 +68,12 @@ export default async function StaffConversationsPage() {
             {c.mode === 'human' && (
               <form action={resumeBot}>
                 <input type="hidden" name="id" value={c.id} />
-                <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition">
+                <SubmitButton
+                  pendingText="Handing back…"
+                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-400 hover:text-emerald-300 transition"
+                >
                   Hand back to bot
-                </button>
+                </SubmitButton>
               </form>
             )}
           </li>
