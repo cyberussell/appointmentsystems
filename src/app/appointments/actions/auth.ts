@@ -49,7 +49,10 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
     password,
     options: { data: { full_name: fullName } },
   })
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[signup] auth.signUp failed', { message: error.message, status: error.status, code: error.code })
+    return { error: error.message }
+  }
   if (!data.user) return { error: 'Signup failed — please try again.' }
 
   // Supabase returns a fake user (empty identities) instead of an error when
@@ -69,7 +72,10 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
   const { error: businessError } = await admin
     .from('businesses')
     .insert({ owner_id: data.user.id, name: businessName, slug, business_types: businessTypes, selected_plan_tier: selectedPlanTier })
-  if (businessError) return { error: businessError.message }
+  if (businessError) {
+    console.error('[signup] business insert failed', { message: businessError.message, code: businessError.code, hint: businessError.hint })
+    return { error: businessError.message }
+  }
 
   await logEvent(admin, null, 'business_signed_up', { business_name: businessName, slug })
 
