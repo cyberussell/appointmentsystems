@@ -33,21 +33,23 @@ interface ApptRow {
 }
 
 export default async function StaffAppointmentsPage() {
-  const { supabase, business } = await requireStaffAccess()
+  const { supabase, business, staff } = await requireStaffAccess()
   const t = getTerms(business.business_types)
 
   const now = new Date()
   const windowEnd = new Date(now.getTime() + 14 * 86400_000)
 
-  const [svcRes, staffRes, apptRes] = await Promise.all([
+  const [svcRes, staffRes, staffSvcRes, apptRes] = await Promise.all([
     supabase.from('services').select('*').eq('business_id', business.id).eq('active', true).order('created_at'),
     supabase.from('staff').select('*').eq('business_id', business.id).eq('active', true).order('created_at'),
+    supabase.from('staff_services').select('staff_id, service_id').eq('business_id', business.id),
     supabase
       .from('appointments')
       .select(
         'id, starts_at, status, source, intake_note, amount_paid, paid_at, reference_code, clients(full_name, phone), services(name, price), staff(name)'
       )
       .eq('business_id', business.id)
+      .eq('staff_id', staff.id)
       .gte('starts_at', now.toISOString())
       .lt('starts_at', windowEnd.toISOString())
       .order('starts_at'),
@@ -65,6 +67,7 @@ export default async function StaffAppointmentsPage() {
         providerNoun={t.provider}
         services={(svcRes.data ?? []) as Service[]}
         staff={(staffRes.data ?? []) as Staff[]}
+        staffServices={staffSvcRes.data ?? []}
       />
 
       <div className="space-y-2">

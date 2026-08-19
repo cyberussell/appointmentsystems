@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     businessId: business.id,
     timezone: (business as Business).timezone,
     serviceId,
-    days: 14,
+    days: 7,
     limit: 60,
   })
   return NextResponse.json({ slots })

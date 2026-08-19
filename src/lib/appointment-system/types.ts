@@ -53,6 +53,14 @@ export interface Service {
   created_at: string
 }
 
+export interface StaffService {
+  id: string
+  business_id: string
+  staff_id: string
+  service_id: string
+  created_at: string
+}
+
 export interface Availability {
   id: string
   business_id: string

@@ -3,9 +3,11 @@ import { TriangleAlert } from 'lucide-react'
 import { requireBusiness } from '@/lib/appointment-system/auth'
 import { getTerms } from '@/lib/appointment-system/terminology'
 import { canAddProvider, PLANS } from '@/lib/appointment-system/entitlements'
+import type { Service } from '@/lib/appointment-system/types'
 import StaffForm from '@/components/appointment-system/StaffForm'
 import StaffInviteForm from '@/components/appointment-system/StaffInviteForm'
 import StaffResendInviteForm from '@/components/appointment-system/StaffResendInviteForm'
+import StaffServicesForm from '@/components/appointment-system/StaffServicesForm'
 import { toggleStaff, deleteStaff } from '../../actions'
 
 export const dynamic = 'force-dynamic'
@@ -13,13 +15,18 @@ export const dynamic = 'force-dynamic'
 export default async function StaffPage() {
   const { supabase, business } = await requireBusiness()
   const t = getTerms(business.business_types)
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('*')
-    .eq('business_id', business.id)
-    .order('created_at')
-
-  const seats = await canAddProvider(supabase, business)
+  const [{ data: staff }, { data: services }, { data: staffServiceRows }, seats] = await Promise.all([
+    supabase.from('staff').select('*').eq('business_id', business.id).order('created_at'),
+    supabase.from('services').select('*').eq('business_id', business.id).eq('active', true).order('created_at'),
+    supabase.from('staff_services').select('staff_id, service_id').eq('business_id', business.id),
+    canAddProvider(supabase, business),
+  ])
+  const servicesByStaff = new Map<string, string[]>()
+  for (const row of staffServiceRows ?? []) {
+    const list = servicesByStaff.get(row.staff_id) ?? []
+    list.push(row.service_id)
+    servicesByStaff.set(row.staff_id, list)
+  }
 
   return (
     <div className="space-y-8">
@@ -78,6 +85,11 @@ export default async function StaffPage() {
                   <StaffInviteForm staffId={m.id} />
                 </div>
               )}
+              <StaffServicesForm
+                staffId={m.id}
+                services={(services ?? []) as Service[]}
+                selectedServiceIds={servicesByStaff.get(m.id) ?? []}
+              />
             </div>
             <div className="flex gap-2">
               {m.profile_id && <StaffResendInviteForm staffId={m.id} />}

@@ -17,7 +17,7 @@ function dateKeyInTz(iso: string, timeZone: string): string {
 }
 
 export default async function StaffTodayPage() {
-  const { supabase, business } = await requireStaffAccess()
+  const { supabase, business, staff } = await requireStaffAccess()
   const t = getTerms(business.business_types)
 
   const now = new Date()
@@ -39,6 +39,7 @@ export default async function StaffTodayPage() {
       .from('appointments')
       .select('*, clients(full_name, phone), services(name, price), staff(name)')
       .eq('business_id', business.id)
+      .eq('staff_id', staff.id)
       .gte('starts_at', dayStart.toISOString())
       .lt('starts_at', dayEnd.toISOString())
       .order('starts_at'),
@@ -46,6 +47,7 @@ export default async function StaffTodayPage() {
       .from('appointments')
       .select('id', { count: 'exact', head: true })
       .eq('business_id', business.id)
+      .eq('staff_id', staff.id)
       .in('status', ['pending', 'confirmed', 'completed'])
       .gte('starts_at', weekStart.toISOString())
       .lt('starts_at', weekEnd.toISOString()),
@@ -53,12 +55,14 @@ export default async function StaffTodayPage() {
       .from('appointments')
       .select('id', { count: 'exact', head: true })
       .eq('business_id', business.id)
+      .eq('staff_id', staff.id)
       .eq('status', 'completed')
       .gte('starts_at', last30.toISOString()),
     supabase
       .from('appointments')
       .select('id', { count: 'exact', head: true })
       .eq('business_id', business.id)
+      .eq('staff_id', staff.id)
       .eq('status', 'no_show')
       .gte('starts_at', last30.toISOString()),
     supabase

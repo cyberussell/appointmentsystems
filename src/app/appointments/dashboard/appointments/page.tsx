@@ -118,9 +118,10 @@ export default async function AppointmentsPage({
     </div>
   )
 
-  const [svcRes, staffRes, quota] = await Promise.all([
+  const [svcRes, staffRes, staffSvcRes, quota] = await Promise.all([
     supabase.from('services').select('*').eq('business_id', business.id).eq('active', true).order('created_at'),
     supabase.from('staff').select('*').eq('business_id', business.id).eq('active', true).order('created_at'),
+    supabase.from('staff_services').select('staff_id, service_id').eq('business_id', business.id),
     canCreateAppointment(supabase, business),
   ])
   const usageBanner = <UsageBanner tier={business.plan_tier} used={quota.used} limit={quota.limit} />
@@ -130,6 +131,7 @@ export default async function AppointmentsPage({
       providerNoun={t.provider}
       services={(svcRes.data ?? []) as Service[]}
       staff={(staffRes.data ?? []) as Staff[]}
+      staffServices={staffSvcRes.data ?? []}
     />
   )
 

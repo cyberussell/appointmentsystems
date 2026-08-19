@@ -106,9 +106,10 @@ export async function getAvailableSlots(
   const now = new Date()
   const windowEnd = new Date(now.getTime() + days * 86400_000)
 
-  const [svcRes, staffRes, availRes, breaksRes, blockedRes, apptRes] = await Promise.all([
+  const [svcRes, staffRes, staffSvcRes, availRes, breaksRes, blockedRes, apptRes] = await Promise.all([
     db.from('services').select('*').eq('id', serviceId).single(),
     db.from('staff').select('*').eq('business_id', businessId).eq('active', true),
+    db.from('staff_services').select('staff_id, service_id').eq('business_id', businessId),
     db.from('availability').select('*').eq('business_id', businessId),
     db.from('availability_breaks').select('*').eq('business_id', businessId),
     db
@@ -129,6 +130,15 @@ export async function getAvailableSlots(
   const service = svcRes.data as Service | null
   if (!service) return []
   const staff = (staffRes.data ?? []) as Staff[]
+  const staffServiceRows = (staffSvcRes.data ?? []) as { staff_id: string; service_id: string }[]
+  // A staff member with no rows here is unrestricted (can perform any
+  // service); restriction only applies once at least one row exists for them.
+  const restrictedStaffIds = new Set(staffServiceRows.map((r) => r.staff_id))
+  const eligibleForThisService = new Set(
+    staffServiceRows.filter((r) => r.service_id === serviceId).map((r) => r.staff_id)
+  )
+  const staffCanPerformService = (staffId: string) =>
+    !restrictedStaffIds.has(staffId) || eligibleForThisService.has(staffId)
   const availability = (availRes.data ?? []) as Availability[]
   const breaks = (breaksRes.data ?? []) as AvailabilityBreak[]
   const blockedDates = (blockedRes.data ?? []) as BlockedDate[]
@@ -150,6 +160,7 @@ export async function getAvailableSlots(
       if (window.day_of_week !== weekday) continue
       const member = staffById.get(window.staff_id)
       if (!member) continue
+      if (!staffCanPerformService(member.id)) continue
       if (blockedDates.some((b) => b.staff_id === member.id && b.date === key)) continue
 
       const [sh, sm] = window.start_time.split(':').map(Number)
@@ -278,6 +289,18 @@ export async function bookAppointment(db: SupabaseClient, input: BookingInput): 
     .eq('id', input.staffId)
     .eq('business_id', input.businessId)
   if (!staffCount) return { ok: false, reason: 'error', message: 'Staff member not found' }
+
+  // Defense in depth: getAvailableSlots already excludes staff who can't
+  // perform this service, but this function is also reachable directly
+  // (e.g. a stale/tampered client POST), so re-check server-side here too.
+  const { data: staffAssignedServices } = await db.from('staff_services').select('service_id').eq('staff_id', input.staffId)
+  if (
+    staffAssignedServices &&
+    staffAssignedServices.length > 0 &&
+    !staffAssignedServices.some((r) => r.service_id === input.serviceId)
+  ) {
+    return { ok: false, reason: 'error', message: 'This staff member does not perform that service.' }
+  }
 
   // Find or create the client (by PSID for Messenger, by phone for web).
   let clientId: string | null = null

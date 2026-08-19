@@ -1,17 +1,19 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 import { createManualAppointment, type ActionResult } from '@/app/appointments/actions'
 import type { Service, Staff } from '@/lib/appointment-system/types'
 
 export default function ManualAppointmentForm({
   services,
   staff,
+  staffServices,
   clientLabel = 'Client',
   providerNoun = 'doctor',
 }: {
   services: Service[]
   staff: Staff[]
+  staffServices: { staff_id: string; service_id: string }[]
   clientLabel?: string
   providerNoun?: string
 }) {
@@ -21,11 +23,25 @@ export default function ManualAppointmentForm({
   )
   const formRef = useRef<HTMLFormElement>(null)
   const submitted = useRef(false)
+  const [serviceId, setServiceId] = useState(services[0]?.id ?? '')
 
   useEffect(() => {
-    if (submitted.current && !pending && !state.error) formRef.current?.reset()
+    if (submitted.current && !pending && !state.error) {
+      formRef.current?.reset()
+      setServiceId(services[0]?.id ?? '')
+    }
     if (!pending) submitted.current = false
-  }, [pending, state.error])
+  }, [pending, state.error, services])
+
+  // A staff member with no rows in staffServices is unrestricted (can
+  // perform any service) — mirrors the fallback in getAvailableSlots.
+  const eligibleStaff = useMemo(() => {
+    const restricted = new Set(staffServices.map((r) => r.staff_id))
+    const eligibleForThisService = new Set(
+      staffServices.filter((r) => r.service_id === serviceId).map((r) => r.staff_id)
+    )
+    return staff.filter((m) => !restricted.has(m.id) || eligibleForThisService.has(m.id))
+  }, [staff, staffServices, serviceId])
 
   if (services.length === 0 || staff.length === 0) {
     return (
@@ -60,6 +76,8 @@ export default function ManualAppointmentForm({
         <select
           name="service_id"
           required
+          value={serviceId}
+          onChange={(e) => setServiceId(e.target.value)}
           className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
         >
           {services.map((s) => (
@@ -68,17 +86,21 @@ export default function ManualAppointmentForm({
             </option>
           ))}
         </select>
-        <select
-          name="staff_id"
-          required
-          className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-        >
-          {staff.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
+        {eligibleStaff.length > 0 ? (
+          <select
+            name="staff_id"
+            required
+            className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+          >
+            {eligibleStaff.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-sm text-amber-400 self-center">No staff assigned to this service yet.</p>
+        )}
         <input
           name="starts_at"
           type="datetime-local"
