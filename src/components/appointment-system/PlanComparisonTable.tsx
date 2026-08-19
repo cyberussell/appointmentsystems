@@ -5,8 +5,8 @@ type Cell = boolean | string
 
 // Single source of truth for the feature comparison — shown on both the
 // public landing page and the logged-in Billing tab, so they can never drift.
-// "Soon" marks anything not actually shippable yet — see PLAN_BULLETS in
-// entitlements.ts for the same rule applied to the pricing cards.
+// Only list what's actually shipped — see PLAN_BULLETS in entitlements.ts
+// for the same rule applied to the pricing cards.
 const COMPARISON: { feature: string; cells: [Cell, Cell, Cell] }[] = [
   { feature: 'Staff logins', cells: ['1', '5', 'Unlimited'] },
   { feature: 'Monthly appointments', cells: ['100', 'Unlimited', 'Unlimited'] },
@@ -19,16 +19,8 @@ const COMPARISON: { feature: string; cells: [Cell, Cell, Cell] }[] = [
   { feature: 'Manual & walk-in bookings', cells: [true, true, true] },
   { feature: 'Cancellation & rescheduling', cells: [true, true, true] },
   { feature: 'Email notifications', cells: [false, true, true] },
-  { feature: 'Calendar sync', cells: [false, 'Soon', 'Soon'] },
   { feature: 'Reporting', cells: [false, true, true] },
-  { feature: 'Waitlist', cells: [false, 'Soon', 'Soon'] },
   { feature: 'Messenger booking bot', cells: [false, false, true] },
-  { feature: 'SMS + email reminders', cells: [false, false, 'Soon'] },
-  { feature: 'Deposits', cells: [false, false, 'Soon'] },
-  { feature: 'White label', cells: [false, false, 'Soon'] },
-  { feature: 'Data export', cells: [false, false, 'Soon'] },
-  { feature: 'Recurring appointments', cells: [false, false, 'Soon'] },
-  { feature: 'Memberships & packages', cells: [false, false, 'Soon'] },
 ]
 
 function Check() {
@@ -81,8 +73,6 @@ function ComparisonTable() {
                       </span>
                     ) : cell === false ? (
                       <Dash />
-                    ) : cell === 'Soon' ? (
-                      <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] text-amber-300">Soon</span>
                     ) : (
                       cell
                     )}
@@ -93,9 +83,6 @@ function ComparisonTable() {
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-center text-xs text-slate-500">
-        Features marked &ldquo;Soon&rdquo; are on the roadmap and not yet available.
-      </p>
     </>
   )
 }

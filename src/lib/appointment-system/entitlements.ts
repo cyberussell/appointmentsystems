@@ -69,8 +69,8 @@ export const PLAN_ORDER: PlanTier[] = ['free', 'basic', 'pro']
 // and the logged-in Billing tab. Single-sourced here so the two can never
 // show different feature lists for the same plan.
 //
-// "(soon)" marks anything not actually shippable yet — remove the tag the
-// moment the feature ships, not before.
+// Only list what's actually shipped and enforced — don't advertise
+// roadmap/planned features that aren't real yet.
 export const PLAN_BULLETS: Record<PlanTier, string[]> = {
   free: [
     '1 staff login',
@@ -90,20 +90,12 @@ export const PLAN_BULLETS: Record<PlanTier, string[]> = {
     'Up to 5 staff logins',
     'Unlimited appointments',
     'Email notifications',
-    'Calendar sync (soon)',
     'Basic reporting',
-    'Waitlist (soon)',
   ],
   pro: [
     'Everything in Basic',
     'Unlimited staff logins',
     'Messenger booking bot',
-    'SMS + email reminders (soon)',
-    'Deposits (soon)',
-    'White label (soon)',
-    'Advanced reporting & data export (soon)',
-    'Recurring appointments (soon)',
-    'Memberships & packages (soon)',
   ],
 }
 
