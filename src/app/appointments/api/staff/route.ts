@@ -5,10 +5,16 @@ import type { Business } from '@/lib/appointment-system/types'
 export const dynamic = 'force-dynamic'
 
 // GET /appointments/api/staff?business=slug[&service=id] → a business's
-// active staff, optionally scoped to who can perform a given service.
-// Mirrors getAvailableSlots()'s "no staff_services rows = unrestricted,
-// can perform any service" eligibility rule, so a client never has to
-// re-derive it from raw staff_services rows itself.
+// active staff. Each staff member includes serviceIds: the specific
+// services they're restricted to, or null if unrestricted (can perform
+// any service) — same "no staff_services rows = unrestricted" rule
+// getAvailableSlots() uses. Returning this on every response (not just
+// when &service is passed) lets a client cross-filter in either
+// direction — by service, or by staff — from one fetch, with no extra
+// round trip and no risk of the two filters racing each other.
+// Passing &service=id additionally narrows the returned list to just
+// those eligible for that one service, for callers that only care about
+// one direction.
 export async function GET(request: NextRequest) {
   const businessSlug = request.nextUrl.searchParams.get('business')
   const serviceId = request.nextUrl.searchParams.get('service')
@@ -26,26 +32,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   }
 
-  const { data: staffRows } = await db
-    .from('staff')
-    .select('id, name, title')
-    .eq('business_id', business.id)
-    .eq('active', true)
-    .order('created_at')
-  const staff = staffRows ?? []
+  const [{ data: staffRows }, { data: staffServiceRows }] = await Promise.all([
+    db
+      .from('staff')
+      .select('id, name, title')
+      .eq('business_id', business.id)
+      .eq('active', true)
+      .order('created_at'),
+    db.from('staff_services').select('staff_id, service_id').eq('business_id', business.id),
+  ])
 
-  if (!serviceId) {
-    return NextResponse.json({ staff })
+  const serviceIdsByStaff = new Map<string, string[]>()
+  for (const row of staffServiceRows ?? []) {
+    const list = serviceIdsByStaff.get(row.staff_id) ?? []
+    list.push(row.service_id)
+    serviceIdsByStaff.set(row.staff_id, list)
   }
 
-  const { data: staffServiceRows } = await db
-    .from('staff_services')
-    .select('staff_id, service_id')
-    .eq('business_id', business.id)
-  const rows = staffServiceRows ?? []
-  const restrictedStaffIds = new Set(rows.map((r) => r.staff_id))
-  const eligibleForThisService = new Set(rows.filter((r) => r.service_id === serviceId).map((r) => r.staff_id))
-  const eligible = staff.filter((s) => !restrictedStaffIds.has(s.id) || eligibleForThisService.has(s.id))
+  let staff = (staffRows ?? []).map((s) => ({
+    ...s,
+    serviceIds: serviceIdsByStaff.get(s.id) ?? null,
+  }))
 
-  return NextResponse.json({ staff: eligible })
+  if (serviceId) {
+    staff = staff.filter((s) => s.serviceIds === null || s.serviceIds.includes(serviceId))
+  }
+
+  return NextResponse.json({ staff })
 }
