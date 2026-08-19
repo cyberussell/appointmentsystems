@@ -47,7 +47,10 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: 'https://www.cyberussell.com/appointments/login',
+    },
   })
   if (error) {
     console.error('[signup] auth.signUp failed', { message: error.message, status: error.status, code: error.code })
