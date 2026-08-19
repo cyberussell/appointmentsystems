@@ -119,6 +119,7 @@ export interface Appointment {
 export type FlowStep =
   | 'idle'
   | 'choosing_service'
+  | 'choosing_day'
   | 'choosing_slot'
   | 'choosing_staff'
   | 'collecting_name'

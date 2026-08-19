@@ -105,7 +105,16 @@ async function handlePayload(
   }
   if (payload.startsWith('SERVICE_')) {
     const serviceId = payload.slice('SERVICE_'.length)
-    return showSlots(db, business, pageToken, psid, convo, serviceId)
+    return showDays(db, business, pageToken, psid, convo, serviceId)
+  }
+  if (payload.startsWith('DAY_')) {
+    // DAY_{serviceId}_{dateKey} — dateKey is always 10 chars (YYYY-MM-DD),
+    // serviceId is a uuid (36 chars); slice from the end to keep this
+    // robust even though service uuids don't otherwise contain underscores.
+    const rest = payload.slice('DAY_'.length)
+    const dateKey = rest.slice(-10)
+    const serviceId = rest.slice(0, rest.length - 11)
+    return showSlots(db, business, pageToken, psid, convo, serviceId, dateKey)
   }
   if (payload.startsWith('TIME_')) {
     const startsAt = new Date(Number(payload.slice('TIME_'.length))).toISOString()
@@ -203,7 +212,39 @@ async function showServices(
   )
 }
 
-async function showSlots(
+function dayKeyOf(iso: string): string {
+  return iso.slice(0, 10)
+}
+function formatDayLabel(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-PH', { timeZone, weekday: 'short', month: 'short', day: 'numeric' }).format(
+    new Date(iso)
+  )
+}
+
+// One raw fetch covers the whole configured window at once (used to both
+// list which days have availability, and — once a day's chosen — that
+// day's own times), so choosing a day never needs a second round trip.
+// limit:500 matches the same fix applied to the web GET /api/book route:
+// with several staff eligible for one service, a low limit exhausts within
+// the first day or two and the rest of the configured window (days:7,
+// i.e. today + 7 more) never surfaces — see that route's own comment for
+// the concrete numbers this was confirmed against.
+async function fetchWeekSlots(db: SupabaseClient, business: Business, serviceId: string): Promise<Slot[]> {
+  return getAvailableSlots(db, {
+    businessId: business.id,
+    timezone: business.timezone,
+    serviceId,
+    days: 7,
+    limit: 500,
+  })
+}
+
+// Messenger quick replies cap at 13 buttons (see sendQuickReplies), and a
+// single business day alone can produce close to that many distinct times
+// — so time and day can't be chosen in one flat list without effectively
+// hiding every day but the first. This step asks which day first, then
+// showSlots() below only has to fit one day's times in the 13-button cap.
+async function showDays(
   db: SupabaseClient,
   business: Business,
   pageToken: string,
@@ -211,15 +252,7 @@ async function showSlots(
   convo: Conversation,
   serviceId: string
 ): Promise<void> {
-  // Fetch more than we'll display so that duplicate times across multiple
-  // staff still leave enough distinct times to fill the quick-reply list.
-  const slots = await getAvailableSlots(db, {
-    businessId: business.id,
-    timezone: business.timezone,
-    serviceId,
-    days: 7,
-    limit: 24,
-  })
+  const slots = await fetchWeekSlots(db, business, serviceId)
   if (slots.length === 0) {
     await sendText(pageToken, psid, 'Pasensya na po, fully booked kami this week. 😔')
     await sendButtons(pageToken, psid, 'Gusto niyo po bang makausap ang staff namin?', [
@@ -228,13 +261,55 @@ async function showSlots(
     ])
     return
   }
+
+  const seenDays = new Set<string>()
+  const days: { key: string; iso: string }[] = []
+  for (const s of slots) {
+    const key = dayKeyOf(s.startsAt)
+    if (seenDays.has(key)) continue
+    seenDays.add(key)
+    days.push({ key, iso: s.startsAt })
+  }
+
+  // Only one day has anything open — asking "which day?" would be a
+  // pointless extra round trip, so go straight to that day's times.
+  if (days.length === 1) {
+    return showSlots(db, business, pageToken, psid, convo, serviceId, days[0].key)
+  }
+
+  await setState(db, convo.id, { ...convo.state, step: 'choosing_day', serviceId })
+  await sendQuickReplies(
+    pageToken,
+    psid,
+    'Anong araw po? 📅',
+    days.slice(0, 13).map((d, i) => ({
+      title: (i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : formatDayLabel(d.iso, business.timezone)).slice(0, 20),
+      payload: `DAY_${serviceId}_${d.key}`,
+    }))
+  )
+}
+
+async function showSlots(
+  db: SupabaseClient,
+  business: Business,
+  pageToken: string,
+  psid: string,
+  convo: Conversation,
+  serviceId: string,
+  dateKey: string
+): Promise<void> {
+  const daySlots = (await fetchWeekSlots(db, business, serviceId)).filter((s) => dayKeyOf(s.startsAt) === dateKey)
+  if (daySlots.length === 0) {
+    await sendText(pageToken, psid, 'Pasensya na po, puno na po ang araw na iyon. Pumili po ng ibang araw:')
+    return showDays(db, business, pageToken, psid, convo, serviceId)
+  }
   await setState(db, convo.id, { ...convo.state, step: 'choosing_slot', serviceId })
 
   // De-dupe by start time — staff is chosen as a separate optional step,
   // only when more than one staff member is free at the chosen time.
   const uniqueTimes: Slot[] = []
   const seen = new Set<string>()
-  for (const s of slots) {
+  for (const s of daySlots) {
     if (seen.has(s.startsAt)) continue
     seen.add(s.startsAt)
     uniqueTimes.push(s)
@@ -243,7 +318,7 @@ async function showSlots(
   await sendQuickReplies(
     pageToken,
     psid,
-    'Eto po ang mga available na schedule — pili lang po: 🗓️',
+    'Eto po ang mga available na oras — pili lang po: 🕐',
     uniqueTimes.map((s) => ({
       title: s.label.slice(0, 20),
       payload: `TIME_${new Date(s.startsAt).getTime()}`,
@@ -262,18 +337,12 @@ async function onTimeChosen(
   const serviceId = convo.state.serviceId
   if (!serviceId) return showServices(db, business, pageToken, psid, convo)
 
-  const slots = await getAvailableSlots(db, {
-    businessId: business.id,
-    timezone: business.timezone,
-    serviceId,
-    days: 7,
-    limit: 100,
-  })
+  const slots = await fetchWeekSlots(db, business, serviceId)
   const candidates = slots.filter((s) => s.startsAt === startsAt)
 
   if (candidates.length === 0) {
     await sendText(pageToken, psid, 'Ay, kakakuha lang po ng slot na iyon. 😅 Eto po ang iba pang available:')
-    return showSlots(db, business, pageToken, psid, convo, serviceId)
+    return showSlots(db, business, pageToken, psid, convo, serviceId, dayKeyOf(startsAt))
   }
 
   // Only one staff member free at that time — no need to ask, book straight through.
@@ -379,7 +448,7 @@ async function finalizeBooking(
   if (!result.ok) {
     if (result.reason === 'conflict') {
       await sendText(pageToken, psid, 'Ay, kakakuha lang po ng slot na iyon. 😅 Eto po ang iba pang available:')
-      return showSlots(db, business, pageToken, psid, convo, state.serviceId)
+      return showSlots(db, business, pageToken, psid, convo, state.serviceId, dayKeyOf(state.slotStart))
     }
     await logEvent(db, business.id, 'booking_failed', { psid, message: result.message })
     await sendText(pageToken, psid, 'May problema po sa booking. Pakisubukan ulit, o i-tap ang "Talk to staff".')
