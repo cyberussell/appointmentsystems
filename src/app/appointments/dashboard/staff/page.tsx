@@ -63,10 +63,7 @@ export default async function StaffPage() {
 
       <ul className="space-y-2">
         {(staff ?? []).map((m) => (
-          <li
-            key={m.id}
-            className="rounded-xl border border-slate-800 bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3"
-          >
+          <li key={m.id} className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-3">
             <div>
               <p className={`font-medium ${m.active ? '' : 'text-slate-500 line-through'}`}>
                 {m.name}
@@ -81,18 +78,17 @@ export default async function StaffPage() {
                 ) : null}
               </p>
               {m.title && <p className="text-sm text-slate-400">{m.title}</p>}
-              {!m.profile_id && !m.invite_email && (
-                <div className="mt-2">
-                  <StaffInviteForm staffId={m.id} />
-                </div>
-              )}
-              <StaffServicesForm
-                staffId={m.id}
-                services={(services ?? []) as Service[]}
-                selectedServiceIds={servicesByStaff.get(m.id) ?? []}
-              />
             </div>
-            <div className="flex gap-2">
+
+            {!m.profile_id && !m.invite_email && <StaffInviteForm staffId={m.id} />}
+
+            <StaffServicesForm
+              staffId={m.id}
+              services={(services ?? []) as Service[]}
+              selectedServiceIds={servicesByStaff.get(m.id) ?? []}
+            />
+
+            <div className="flex gap-2 pt-1">
               {m.profile_id && <StaffResendInviteForm staffId={m.id} />}
               <form action={toggleStaff}>
                 <input type="hidden" name="id" value={m.id} />
