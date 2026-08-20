@@ -3,7 +3,14 @@
 import { useActionState, useEffect, useState } from 'react'
 import { Check, TriangleAlert } from 'lucide-react'
 import { initiateBillingCheckout, type BillingActionResult } from '@/app/appointments/actions'
-import { FEATURE_LABELS, PLANS, PLAN_BULLETS, PLAN_ORDER, type PlanConfig } from '@/lib/appointment-system/entitlements'
+import {
+  FEATURE_LABELS,
+  PLANS,
+  PLAN_BULLETS,
+  PLAN_ORDER,
+  WEBSITE_ADDON_PRICE_YEARLY,
+  type PlanConfig,
+} from '@/lib/appointment-system/entitlements'
 import type { PlanTier } from '@/lib/appointment-system/types'
 
 export default function BillingPlanCard({
@@ -68,6 +75,12 @@ export default function BillingPlanCard({
           </li>
         ))}
       </ul>
+
+      {plan.tier !== 'free' && (
+        <p className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+          + Optional website — ₱{WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr
+        </p>
+      )}
 
       <div className="mt-4 flex-1" />
 

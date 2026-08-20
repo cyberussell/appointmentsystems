@@ -1,7 +1,7 @@
 'use server'
 
 import { requireBusiness } from '@/lib/appointment-system/auth'
-import { PLANS, PLAN_CHECKOUT_SUMMARY } from '@/lib/appointment-system/entitlements'
+import { PLANS, PLAN_CHECKOUT_SUMMARY, WEBSITE_ADDON_PRICE_YEARLY } from '@/lib/appointment-system/entitlements'
 import { createBillingCheckout } from '@/lib/appointment-system/paymongo'
 import { createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logError } from '@/lib/appointment-system/errors'
@@ -24,6 +24,7 @@ export async function initiateBillingCheckout(
     checkout = await createBillingCheckout({
       businessId: business.id,
       businessName: business.name,
+      kind: 'plan',
       tier: plan.tier,
       planName: plan.name,
       featuresSummary: PLAN_CHECKOUT_SUMMARY[plan.tier],
@@ -41,5 +42,39 @@ export async function initiateBillingCheckout(
   // Returned to the client instead of calling redirect() here — Next.js Server
   // Actions driven by useActionState don't reliably navigate the browser to an
   // external origin; the client does `window.location.href = checkoutUrl` instead.
+  return { checkoutUrl: checkout.checkoutUrl }
+}
+
+export async function initiateAddonCheckout(
+  _prev: BillingActionResult,
+  _formData: FormData
+): Promise<BillingActionResult> {
+  const { business } = await requireBusiness()
+  if (business.plan_tier === 'free') {
+    return { error: 'Upgrade to Basic or Pro to add a website.' }
+  }
+
+  let checkout
+  try {
+    checkout = await createBillingCheckout({
+      businessId: business.id,
+      businessName: business.name,
+      kind: 'addon',
+      planName: 'Website add-on',
+      featuresSummary: 'Custom website design + hosting, billed yearly',
+      amountCentavos: Math.round(WEBSITE_ADDON_PRICE_YEARLY * 100),
+      successUrl: 'https://www.cyberussell.com/appointments/dashboard/billing?paid=1',
+      cancelUrl: 'https://www.cyberussell.com/appointments/dashboard/billing?cancelled=1',
+    })
+  } catch (error) {
+    await logError(createAdminSupabase(), business.id, 'initiateAddonCheckout', error)
+    return { error: 'Could not start checkout — please try again.' }
+  }
+
+  const admin = createAdminSupabase()
+  await admin
+    .from('businesses')
+    .update({ website_addon_checkout_session_id: checkout.sessionId })
+    .eq('id', business.id)
   return { checkoutUrl: checkout.checkoutUrl }
 }

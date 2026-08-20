@@ -1,5 +1,5 @@
 import { Check as CheckIcon } from 'lucide-react'
-import { PLANS, PLAN_ORDER } from '@/lib/appointment-system/entitlements'
+import { PLANS, PLAN_ORDER, WEBSITE_ADDON_PRICE_YEARLY } from '@/lib/appointment-system/entitlements'
 
 type Cell = boolean | string
 
@@ -21,6 +21,10 @@ const COMPARISON: { feature: string; cells: [Cell, Cell, Cell] }[] = [
   { feature: 'Email notifications', cells: [false, true, true] },
   { feature: 'Reporting', cells: [false, true, true] },
   { feature: 'Messenger booking bot', cells: [false, false, true] },
+  {
+    feature: 'Website add-on',
+    cells: [false, `+₱${WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr`, `+₱${WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr`],
+  },
 ]
 
 function Check() {

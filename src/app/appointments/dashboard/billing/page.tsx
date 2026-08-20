@@ -1,8 +1,9 @@
 import { requireBusiness } from '@/lib/appointment-system/auth'
-import { PLANS, PLAN_ORDER, canCreateAppointment, canAddProvider } from '@/lib/appointment-system/entitlements'
+import { PLANS, PLAN_ORDER, canCreateAppointment, canAddProvider, hasWebsiteAddon } from '@/lib/appointment-system/entitlements'
 import BillingPlanCard from '@/components/appointment-system/BillingPlanCard'
 import PlanComparisonTable from '@/components/appointment-system/PlanComparisonTable'
 import UsageMeter from '@/components/appointment-system/UsageMeter'
+import WebsiteAddonCard from '@/components/appointment-system/WebsiteAddonCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,6 +87,10 @@ export default async function BillingPage({
       </div>
 
       <PlanComparisonTable />
+
+      {business.plan_tier !== 'free' && (
+        <WebsiteAddonCard hasAddon={hasWebsiteAddon(business)} expiresAt={business.website_addon_expires_at} />
+      )}
 
       <p className="text-xs text-slate-500">
         Prefer GCash or bank transfer? Message us directly and we&apos;ll flip your plan manually after payment.

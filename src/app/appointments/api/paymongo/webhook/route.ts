@@ -15,7 +15,7 @@ interface PaymongoEvent {
       data: {
         id: string
         attributes: {
-          metadata: { business_id?: string; tier?: string } | null
+          metadata: { business_id?: string; tier?: string; kind?: string } | null
         }
       }
     }
@@ -49,8 +49,20 @@ export async function POST(request: NextRequest) {
       const session = event.data.attributes.data
       const businessId = session.attributes.metadata?.business_id
       const tier = session.attributes.metadata?.tier
+      const kind = session.attributes.metadata?.kind ?? 'plan'
       businessIdForErrorLog = businessId ?? null
-      if (businessId && tier) {
+
+      if (kind === 'addon' && businessId) {
+        const db = createAdminSupabase()
+        const expiresAt = new Date(Date.now() + 365 * 86400_000)
+        const { error: updateError } = await db
+          .from('businesses')
+          .update({ website_addon_expires_at: expiresAt.toISOString() })
+          .eq('id', businessId)
+          .eq('website_addon_checkout_session_id', session.id)
+        if (updateError) throw updateError
+        await logEvent(db, businessId, 'website_addon_paid', { checkout_session_id: session.id })
+      } else if (businessId && tier) {
         const db = createAdminSupabase()
         const renewsAt = new Date(Date.now() + 30 * 86400_000)
 

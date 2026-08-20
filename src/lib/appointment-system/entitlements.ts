@@ -65,6 +65,21 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
 
 export const PLAN_ORDER: PlanTier[] = ['free', 'basic', 'pro']
 
+// Optional yearly website add-on (Basic/Pro only, on top of the monthly
+// plan). Not a PlanConfig feature flag — it's per-business purchased state
+// with its own expiry, not a static per-tier entitlement.
+export const WEBSITE_ADDON_PRICE_YEARLY = 2999 // PHP
+
+export function hasWebsiteAddon(
+  business: Pick<Business, 'plan_tier' | 'website_addon_expires_at'>
+): boolean {
+  return (
+    business.plan_tier !== 'free' &&
+    !!business.website_addon_expires_at &&
+    new Date(business.website_addon_expires_at) > new Date()
+  )
+}
+
 // Marketing/UI bullet copy per plan — shown on both the public landing page
 // and the logged-in Billing tab. Single-sourced here so the two can never
 // show different feature lists for the same plan.

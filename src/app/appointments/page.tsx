@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { Check as CheckIcon, CircleX, Flower2, HandHeart, HeartPulse, Hospital, Scissors, Smile, Sparkles, Stethoscope } from 'lucide-react'
 import './landing.css'
-import { PLANS, PLAN_ORDER, PLAN_BULLETS } from '@/lib/appointment-system/entitlements'
+import { PLANS, PLAN_ORDER, PLAN_BULLETS, WEBSITE_ADDON_PRICE_YEARLY } from '@/lib/appointment-system/entitlements'
 import LandingNav from '@/components/appointment-system/landing/LandingNav'
 import TrackedLink from '@/components/appointment-system/landing/TrackedLink'
 import RoiCalculator from '@/components/appointment-system/landing/RoiCalculator'
@@ -393,6 +393,11 @@ export default function AppointmentSystemLanding() {
                         <li key={f} className="flex items-start gap-2"><Check /> <span>{f}</span></li>
                       ))}
                     </ul>
+                    {tier !== 'free' && (
+                      <p className="mt-3 border-t border-white/10 pt-3 text-xs text-slate-400">
+                        + Optional website — ₱{WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr
+                      </p>
+                    )}
                     <TrackedLink
                       href={`/appointments/signup?plan=${tier}`}
                       event="pricing_plan_selected"

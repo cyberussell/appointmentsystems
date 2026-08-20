@@ -19,11 +19,17 @@ interface CheckoutSessionResponse {
   }
 }
 
-/** Creates a hosted PayMongo checkout for one billing cycle of a plan tier. */
+/**
+ * Creates a hosted PayMongo checkout. `kind` tells the webhook which branch
+ * to run on payment: 'plan' updates plan_tier/plan_status/plan_renews_at,
+ * 'addon' updates website_addon_expires_at only. `tier` is only meaningful
+ * for 'plan' checkouts.
+ */
 export async function createBillingCheckout(opts: {
   businessId: string
   businessName: string
-  tier: PlanTier
+  kind: 'plan' | 'addon'
+  tier?: PlanTier
   planName: string
   featuresSummary: string
   amountCentavos: number
@@ -52,7 +58,7 @@ export async function createBillingCheckout(opts: {
           description: `Appointment System billing — ${opts.businessName}`,
           success_url: opts.successUrl,
           cancel_url: opts.cancelUrl,
-          metadata: { business_id: opts.businessId, tier: opts.tier },
+          metadata: { business_id: opts.businessId, tier: opts.tier, kind: opts.kind },
         },
       },
     }),
