@@ -55,7 +55,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
   pro: {
     tier: 'pro',
     name: 'Pro',
-    priceMonthly: 699,
+    priceMonthly: 499,
     tagline: 'Booking automation for growing businesses.',
     monthlyAppointments: null,
     providerLimit: null,

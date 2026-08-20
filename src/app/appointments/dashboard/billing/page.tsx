@@ -15,6 +15,7 @@ export default async function BillingPage({
   const { supabase, business } = await requireBusiness()
   const { paid, cancelled } = await searchParams
   const currentPlan = PLANS[business.plan_tier]
+  const addonActive = hasWebsiteAddon(business)
   const [quota, seats] = await Promise.all([canCreateAppointment(supabase, business), canAddProvider(supabase, business)])
 
   return (
@@ -82,15 +83,14 @@ export default async function BillingPage({
             currentTier={business.plan_tier}
             planStatus={business.plan_status}
             renewsAt={business.plan_renews_at}
+            hasWebsiteAddon={addonActive}
           />
         ))}
       </div>
 
       <PlanComparisonTable />
 
-      {business.plan_tier !== 'free' && (
-        <WebsiteAddonCard hasAddon={hasWebsiteAddon(business)} expiresAt={business.website_addon_expires_at} />
-      )}
+      {business.plan_tier !== 'free' && <WebsiteAddonCard hasAddon={addonActive} expiresAt={business.website_addon_expires_at} />}
 
       <p className="text-xs text-slate-500">
         Prefer GCash or bank transfer? Message us directly and we&apos;ll flip your plan manually after payment.

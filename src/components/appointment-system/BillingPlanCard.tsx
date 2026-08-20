@@ -19,15 +19,21 @@ export default function BillingPlanCard({
   currentTier,
   planStatus,
   renewsAt,
+  hasWebsiteAddon,
 }: {
   plan: PlanConfig
   isCurrent: boolean
   currentTier: PlanTier
   planStatus: string
   renewsAt: string | null
+  hasWebsiteAddon: boolean
 }) {
   const [state, formAction, pending] = useActionState<BillingActionResult, FormData>(initiateBillingCheckout, {})
   const [confirming, setConfirming] = useState(false)
+  const [addWebsite, setAddWebsite] = useState(false)
+
+  const offerAddon = plan.tier !== 'free' && !hasWebsiteAddon
+  const totalDue = plan.priceMonthly + (offerAddon && addWebsite ? WEBSITE_ADDON_PRICE_YEARLY : 0)
 
   useEffect(() => {
     if (state.checkoutUrl) window.location.href = state.checkoutUrl
@@ -77,9 +83,27 @@ export default function BillingPlanCard({
       </ul>
 
       {plan.tier !== 'free' && (
-        <p className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
-          + Optional website — ₱{WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr
-        </p>
+        <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+          {offerAddon ? (
+            !isCurrent ? (
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={addWebsite}
+                  onChange={(e) => setAddWebsite(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
+                />
+                <span>
+                  Add a website — ₱{WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr, billed with this checkout
+                </span>
+              </label>
+            ) : (
+              <span>+ Optional website — ₱{WEBSITE_ADDON_PRICE_YEARLY.toLocaleString('en-PH')}/yr</span>
+            )
+          ) : (
+            <span className="text-emerald-300">Website add-on active</span>
+          )}
+        </div>
       )}
 
       <div className="mt-4 flex-1" />
@@ -117,12 +141,13 @@ export default function BillingPlanCard({
             </div>
             <form action={formAction} className="flex gap-2">
               <input type="hidden" name="tier" value={plan.tier} />
+              <input type="hidden" name="addWebsite" value={addWebsite ? '1' : '0'} />
               <button
                 type="submit"
                 disabled={pending}
                 className="flex-1 rounded-lg bg-amber-500 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400 disabled:opacity-50 transition"
               >
-                {pending ? 'Starting checkout…' : `Yes, downgrade & pay ₱${plan.priceMonthly.toLocaleString('en-PH')}`}
+                {pending ? 'Starting checkout…' : `Yes, downgrade & pay ₱${totalDue.toLocaleString('en-PH')}`}
               </button>
               <button
                 type="button"
@@ -140,17 +165,18 @@ export default function BillingPlanCard({
             onClick={() => setConfirming(true)}
             className="w-full rounded-lg bg-emerald-500 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
           >
-            {`Pay ₱${plan.priceMonthly.toLocaleString('en-PH')} now`}
+            {`Pay ₱${totalDue.toLocaleString('en-PH')} now`}
           </button>
         ) : (
           <form action={formAction}>
             <input type="hidden" name="tier" value={plan.tier} />
+            <input type="hidden" name="addWebsite" value={addWebsite ? '1' : '0'} />
             <button
               type="submit"
               disabled={pending}
               className="w-full rounded-lg bg-emerald-500 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 transition"
             >
-              {pending ? 'Starting checkout…' : `Pay ₱${plan.priceMonthly.toLocaleString('en-PH')} now`}
+              {pending ? 'Starting checkout…' : `Pay ₱${totalDue.toLocaleString('en-PH')} now`}
             </button>
           </form>
         )

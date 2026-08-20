@@ -1,7 +1,12 @@
 'use server'
 
 import { requireBusiness } from '@/lib/appointment-system/auth'
-import { PLANS, PLAN_CHECKOUT_SUMMARY, WEBSITE_ADDON_PRICE_YEARLY } from '@/lib/appointment-system/entitlements'
+import {
+  PLANS,
+  PLAN_CHECKOUT_SUMMARY,
+  WEBSITE_ADDON_PRICE_YEARLY,
+  hasWebsiteAddon,
+} from '@/lib/appointment-system/entitlements'
 import { createBillingCheckout } from '@/lib/appointment-system/paymongo'
 import { createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logError } from '@/lib/appointment-system/errors'
@@ -19,6 +24,11 @@ export async function initiateBillingCheckout(
   const plan = (PLANS as Record<string, (typeof PLANS)[keyof typeof PLANS]>)[tier]
   if (!plan || plan.priceMonthly <= 0) return { error: 'Pick a paid plan to continue.' }
 
+  // Only bundle the add-on if it's actually being requested and the business
+  // doesn't already have it active — re-selling an active add-on would just
+  // extend it early under a confusing "plan" line item.
+  const wantsAddon = formData.get('addWebsite') === '1' && !hasWebsiteAddon(business)
+
   let checkout
   try {
     checkout = await createBillingCheckout({
@@ -31,6 +41,12 @@ export async function initiateBillingCheckout(
       amountCentavos: Math.round(plan.priceMonthly * 100),
       successUrl: 'https://www.cyberussell.com/appointments/dashboard/billing?paid=1',
       cancelUrl: 'https://www.cyberussell.com/appointments/dashboard/billing?cancelled=1',
+      addon: wantsAddon
+        ? {
+            amountCentavos: Math.round(WEBSITE_ADDON_PRICE_YEARLY * 100),
+            description: 'Custom website design + hosting, billed yearly',
+          }
+        : undefined,
     })
   } catch (error) {
     await logError(createAdminSupabase(), business.id, 'initiateBillingCheckout', error)

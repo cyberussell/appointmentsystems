@@ -35,7 +35,30 @@ export async function createBillingCheckout(opts: {
   amountCentavos: number
   successUrl: string
   cancelUrl: string
+  /** Bundles the website add-on as a second line item on the same checkout (plan checkouts only). */
+  addon?: { amountCentavos: number; description: string }
 }): Promise<{ checkoutUrl: string; sessionId: string }> {
+  const lineItems = [
+    {
+      currency: 'PHP',
+      amount: opts.amountCentavos,
+      description: opts.featuresSummary,
+      name: `${opts.planName} plan`,
+      quantity: 1,
+    },
+    ...(opts.addon
+      ? [
+          {
+            currency: 'PHP',
+            amount: opts.addon.amountCentavos,
+            description: opts.addon.description,
+            name: 'Website add-on',
+            quantity: 1,
+          },
+        ]
+      : []),
+  ]
+
   const res = await fetch(`${PAYMONGO_API}/checkout_sessions`, {
     method: 'POST',
     headers: { Authorization: authHeader(), 'Content-Type': 'application/json' },
@@ -45,20 +68,17 @@ export async function createBillingCheckout(opts: {
           send_email_receipt: true,
           show_description: true,
           show_line_items: true,
-          line_items: [
-            {
-              currency: 'PHP',
-              amount: opts.amountCentavos,
-              description: opts.featuresSummary,
-              name: `${opts.planName} plan`,
-              quantity: 1,
-            },
-          ],
+          line_items: lineItems,
           payment_method_types: ['card', 'gcash'],
           description: `Appointment System billing — ${opts.businessName}`,
           success_url: opts.successUrl,
           cancel_url: opts.cancelUrl,
-          metadata: { business_id: opts.businessId, tier: opts.tier, kind: opts.kind },
+          metadata: {
+            business_id: opts.businessId,
+            tier: opts.tier,
+            kind: opts.kind,
+            includes_addon: opts.addon ? 'true' : 'false',
+          },
         },
       },
     }),

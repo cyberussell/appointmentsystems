@@ -5,7 +5,7 @@ import { track } from './track'
 
 const PLAN_COSTS = [
   { label: 'Basic — ₱299/mo', value: 299 },
-  { label: 'Pro — ₱699/mo', value: 699 },
+  { label: 'Pro — ₱499/mo', value: 499 },
 ]
 
 const peso = (n: number) => `₱${Math.round(n).toLocaleString('en-PH')}`
@@ -13,7 +13,7 @@ const peso = (n: number) => `₱${Math.round(n).toLocaleString('en-PH')}`
 export default function RoiCalculator() {
   const [avgValue, setAvgValue] = useState(500)
   const [extraBookings, setExtraBookings] = useState(10)
-  const [planCost, setPlanCost] = useState(699)
+  const [planCost, setPlanCost] = useState(499)
   const tracked = useRef(false)
 
   const revenue = Math.max(0, avgValue) * Math.max(0, extraBookings)

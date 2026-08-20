@@ -15,7 +15,7 @@ interface PaymongoEvent {
       data: {
         id: string
         attributes: {
-          metadata: { business_id?: string; tier?: string; kind?: string } | null
+          metadata: { business_id?: string; tier?: string; kind?: string; includes_addon?: string } | null
         }
       }
     }
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       const businessId = session.attributes.metadata?.business_id
       const tier = session.attributes.metadata?.tier
       const kind = session.attributes.metadata?.kind ?? 'plan'
+      const includesAddon = session.attributes.metadata?.includes_addon === 'true'
       businessIdForErrorLog = businessId ?? null
 
       if (kind === 'addon' && businessId) {
@@ -86,18 +87,25 @@ export async function POST(request: NextRequest) {
           ? { ...settings, downgrade_notice: { from: current!.plan_tier, to: tier, at: new Date().toISOString() } }
           : settings
 
+        const update: Record<string, unknown> = {
+          plan_tier: tier,
+          plan_status: 'active',
+          plan_renews_at: renewsAt.toISOString(),
+          settings: nextSettings,
+        }
+        // The add-on was bundled as a second line item on this same checkout
+        // session rather than its own — apply it alongside the plan update.
+        if (includesAddon) {
+          update.website_addon_expires_at = new Date(Date.now() + 365 * 86400_000).toISOString()
+        }
+
         const { error: updateError } = await db
           .from('businesses')
-          .update({
-            plan_tier: tier,
-            plan_status: 'active',
-            plan_renews_at: renewsAt.toISOString(),
-            settings: nextSettings,
-          })
+          .update(update)
           .eq('id', businessId)
           .eq('paymongo_checkout_session_id', session.id)
         if (updateError) throw updateError
-        await logEvent(db, businessId, 'billing_payment_paid', { tier, checkout_session_id: session.id })
+        await logEvent(db, businessId, 'billing_payment_paid', { tier, checkout_session_id: session.id, includes_addon: includesAddon })
       }
     }
   } catch (error) {
