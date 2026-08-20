@@ -6,15 +6,8 @@ import { z } from 'zod'
 import { createServerSupabase, createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logEvent } from '@/lib/appointment-system/events'
 import { checkRateLimit, clientIp } from '@/lib/appointment-system/rateLimit'
+import { uniqueBusinessSlug } from '@/lib/appointment-system/slug'
 import type { ActionResult } from './types'
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50)
-}
 
 const signUpSchema = z.object({
   fullName: z.string().min(2).max(80),
@@ -67,10 +60,7 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
   // Business row is created with the service role so signup works even when
   // email confirmation is enabled (no session yet → RLS would block it).
   const admin = createAdminSupabase()
-  let slug = slugify(businessName)
-  if (slug.length < 3) slug = `business-${slug}`
-  const { count } = await admin.from('businesses').select('id', { count: 'exact', head: true }).eq('slug', slug)
-  if (count && count > 0) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`
+  const slug = await uniqueBusinessSlug(admin, businessName)
 
   const { error: businessError } = await admin
     .from('businesses')
