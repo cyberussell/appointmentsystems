@@ -23,7 +23,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
 | `src/components/appointment-system/` | UI components |
 | `appointment-system/migrations/` | SQL migrations, numbered. Run them by hand in the Supabase SQL editor, in order. There is no migration runner |
 
-`appointment-system/SETUP.md` is **partly stale**. It still describes the AI receptionist, manual billing, and 14-day trials, all of which have since been removed. Where it disagrees with this file, trust this file and the code.
+`appointment-system/SETUP.md` covers provisioning: env vars, Supabase, PayMongo, Meta app, and operations.
 
 ## Hard-wired deployment facts
 
