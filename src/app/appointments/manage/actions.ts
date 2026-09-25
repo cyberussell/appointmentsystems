@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import { checkRateLimit, clientIp } from '@/lib/appointment-system/rateLimit'
 import { createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logEvent } from '@/lib/appointment-system/events'
 import { getAvailableSlots, hasConfiguredHours } from '@/lib/appointment-system/slots'
@@ -13,8 +15,16 @@ export interface ManageActionResult {
 
 // These are unauthenticated by design — the reference code itself is the
 // access credential, same pattern as most consumer booking systems.
+// Rate-limited per IP (sharing the manage page's lookup budget) so the
+// 6-digit code space can't be brute-forced through the actions either.
+async function rateLimited(): Promise<boolean> {
+  return !(await checkRateLimit(`manage:${clientIp(await headers())}`, 20))
+}
+
+const TOO_MANY = { error: 'Too many attempts — please wait a minute and try again.' }
 
 export async function cancelBookingByCode(code: string): Promise<ManageActionResult> {
+  if (await rateLimited()) return TOO_MANY
   const db = createAdminSupabase()
   const { data: appt } = await db
     .from('appointments')
@@ -38,6 +48,7 @@ export async function rescheduleBookingByCode(
   staffId: string,
   startsAtIso: string
 ): Promise<ManageActionResult> {
+  if (await rateLimited()) return TOO_MANY
   const db = createAdminSupabase()
   const { data: appt } = await db
     .from('appointments')

@@ -119,7 +119,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
   - Web and manual: by `phone` where `messenger_psid is null`.
   - When a client is found, their name and phone are updated.
 - New appointments are inserted as `confirmed`. `ends_at` = `starts_at` + service duration.
-- The **reference code** is 6 random digits, unique, and retried up to 3 times on collision. **The code is the customer's credential** for `/appointments/manage/[code]`, which is unauthenticated by design.
+- The **reference code** is 6 random digits, unique, and retried up to 3 times on collision. **The code is the customer's credential** for `/appointments/manage/[code]`, which is unauthenticated by design. Because the code space is small, the manage page lookup and the cancel/reschedule actions share a rate limit of 20 per minute per IP (`manage:{ip}`).
 - **One booking per client per day on self-service channels** (web and Messenger), using the business-timezone calendar day (`hasSameDayBooking`). Staff manual bookings skip this check.
 - Web booking validation:
   - Phone must match PH mobile `09XXXXXXXXX` (spaces and dashes are stripped).
