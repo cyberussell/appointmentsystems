@@ -1,8 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
+import { checkRateLimit, clientIp } from '@/lib/appointment-system/rateLimit'
 import { createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logEvent } from '@/lib/appointment-system/events'
+import { getAvailableSlots, hasConfiguredHours } from '@/lib/appointment-system/slots'
+import type { Business } from '@/lib/appointment-system/types'
 
 export interface ManageActionResult {
   error?: string
@@ -11,8 +15,16 @@ export interface ManageActionResult {
 
 // These are unauthenticated by design — the reference code itself is the
 // access credential, same pattern as most consumer booking systems.
+// Rate-limited per IP (sharing the manage page's lookup budget) so the
+// 6-digit code space can't be brute-forced through the actions either.
+async function rateLimited(): Promise<boolean> {
+  return !(await checkRateLimit(`manage:${clientIp(await headers())}`, 20))
+}
+
+const TOO_MANY = { error: 'Too many attempts — please wait a minute and try again.' }
 
 export async function cancelBookingByCode(code: string): Promise<ManageActionResult> {
+  if (await rateLimited()) return TOO_MANY
   const db = createAdminSupabase()
   const { data: appt } = await db
     .from('appointments')
@@ -36,10 +48,11 @@ export async function rescheduleBookingByCode(
   staffId: string,
   startsAtIso: string
 ): Promise<ManageActionResult> {
+  if (await rateLimited()) return TOO_MANY
   const db = createAdminSupabase()
   const { data: appt } = await db
     .from('appointments')
-    .select('id, business_id, status, services(duration_min)')
+    .select('id, business_id, service_id, status, services(duration_min)')
     .eq('reference_code', code)
     .maybeSingle()
   if (!appt) return { error: 'Booking not found.' }
@@ -49,7 +62,34 @@ export async function rescheduleBookingByCode(
   const duration = (appt.services as { duration_min?: number } | null)?.duration_min
   if (!duration) return { error: 'Could not determine service duration.' }
 
+  const { data: business } = await db.from('businesses').select('*').eq('id', appt.business_id).maybeSingle()
+  if (!business || (business as Business).plan_status === 'suspended') return { error: 'Booking not found.' }
+  const settings = (business as Business).settings as { closed?: boolean; closed_message?: string }
+  if (settings.closed) {
+    return { error: settings.closed_message || 'The business is temporarily closed.' }
+  }
+  if (!hasConfiguredHours(business as Business)) {
+    return { error: 'This business is not accepting online bookings right now.' }
+  }
+
+  // The staff id and start time come straight from the browser, so only
+  // accept a pairing the slot engine itself would offer for this booking's
+  // service: that one check covers staff belonging to this business, being
+  // active, being eligible for the service, working hours, breaks, blocked
+  // dates, lead time and the 7-day window. Same parameters as GET /api/book,
+  // which is where the manage page gets its choices from.
   const startsAt = new Date(startsAtIso)
+  if (Number.isNaN(startsAt.getTime())) return { error: 'Invalid date/time.' }
+  const slots = await getAvailableSlots(db, {
+    businessId: appt.business_id,
+    timezone: (business as Business).timezone,
+    serviceId: appt.service_id,
+    days: 7,
+    limit: 500,
+  })
+  const offered = slots.some((s) => s.staffId === staffId && new Date(s.startsAt).getTime() === startsAt.getTime())
+  if (!offered) return { error: 'That time is no longer available — please pick another.' }
+
   const endsAt = new Date(startsAt.getTime() + duration * 60_000)
   const { error } = await db
     .from('appointments')
@@ -58,6 +98,7 @@ export async function rescheduleBookingByCode(
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
       status: 'confirmed',
+      reminder_sent_at: null,
     })
     .eq('id', appt.id)
 

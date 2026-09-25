@@ -32,6 +32,9 @@ META_VERIFY_TOKEN=any-random-string-you-invent    # e.g. `openssl rand -hex 16`
 # Owner "new booking" emails (Basic+), sent through Gmail
 GMAIL_USER=you@gmail.com
 GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx            # a Google App Password, not the account password
+
+# Vercel Cron auth for the daily Messenger reminder job (any long random string)
+CRON_SECRET=xxxx                                  # e.g. `openssl rand -hex 32`
 ```
 
 ## 2. Create the dedicated Supabase project
@@ -85,6 +88,12 @@ While the Meta app is in **Development Mode**, the bot works only for Pages whos
 3. Under Webhooks, **Add subscriptions** for that Page (`messages`, `messaging_postbacks`).
 4. The owner pastes the **Facebook Page ID** and **Page Access Token** into the dashboard's **Settings** tab. The form only appears on the Pro plan. The token is stored in `business_secrets`, which only the service role can read.
 5. Test by messaging the Page from a personal account. The bot should reply with its main menu (Book / Ask a question / Talk to staff).
+
+### Day-before reminders (Pro)
+
+`vercel.json` schedules `GET /appointments/api/cron/reminders` every day at 10:00 UTC (18:00 Manila). Vercel sends `CRON_SECRET` automatically once the env var is set on the project. The job messages every Messenger client whose appointment is tomorrow, in the business's timezone.
+
+Migration 015 (`reminder_sent_at`) must be applied. To test by hand, run `curl -H "Authorization: Bearer $CRON_SECRET" https://<deployment>/appointments/api/cron/reminders`. The response reports `sent`, `failed` and `skipped`.
 
 Businesses below Pro still get one automatic reply, a link to their public booking page, once their Page is connected.
 

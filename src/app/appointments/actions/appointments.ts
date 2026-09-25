@@ -112,7 +112,8 @@ export async function rescheduleAppointment(
   const endsAt = new Date(startsAt.getTime() + duration * 60_000)
   const { error } = await supabase
     .from('appointments')
-    .update({ starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(), status: 'confirmed' })
+    // A moved appointment needs its own day-before reminder.
+    .update({ starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(), status: 'confirmed', reminder_sent_at: null })
     .eq('id', id)
     .eq('business_id', business.id)
   if (error) {

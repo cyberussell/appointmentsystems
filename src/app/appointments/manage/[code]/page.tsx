@@ -1,8 +1,12 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { checkRateLimit, clientIp } from '@/lib/appointment-system/rateLimit'
 import { createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import ManageBookingView from '@/components/appointment-system/ManageBookingView'
 
 export const dynamic = 'force-dynamic'
+
+const MANAGE_LOOKUPS_PER_MINUTE = 20
 
 interface ApptRow {
   id: string
@@ -17,6 +21,21 @@ interface ApptRow {
 
 export default async function ManageBookingPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params
+
+  // The 6-digit code is the only credential for this page, which shows the
+  // client's name and phone — cap lookups per IP so codes can't be
+  // enumerated. Shares its budget with the cancel/reschedule actions.
+  if (!(await checkRateLimit(`manage:${clientIp(await headers())}`, MANAGE_LOOKUPS_PER_MINUTE))) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-xl">
+          <p className="font-semibold text-white">Too many attempts</p>
+          <p className="mt-1.5 text-sm text-slate-400">Please wait a minute, then try your reference code again.</p>
+        </div>
+      </main>
+    )
+  }
+
   const db = createAdminSupabase()
   const { data } = await db
     .from('appointments')

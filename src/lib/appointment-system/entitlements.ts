@@ -4,7 +4,7 @@ import type { Business, PlanTier } from './types'
 // ── Single source of truth for plans and entitlements ───────────────────────
 // All plan gating goes through this module. Never write `plan_tier === 'pro'`
 // checks elsewhere — add a feature flag or limit here instead. The config is
-// code-driven for v1 (four plans, manual billing); if plans ever become
+// code-driven for v1 (three plans, PayMongo checkout billing); if plans ever become
 // user-configurable, swap the PLANS constant for a DB read without touching
 // call sites.
 
@@ -13,10 +13,11 @@ import type { Business, PlanTier } from './types'
 // below for what's planned but not real yet) — don't pre-declare flags for
 // features that don't exist, that's how customer_records/no_show_tracking
 // etc. ended up declared but never checked anywhere in a previous pass.
-export type FeatureFlag = 'messenger_booking_bot' | 'email_notifications' | 'basic_reporting'
+export type FeatureFlag = 'messenger_booking_bot' | 'messenger_reminders' | 'email_notifications' | 'basic_reporting'
 
 export const FEATURE_LABELS: Record<FeatureFlag, string> = {
   messenger_booking_bot: 'Messenger booking bot',
+  messenger_reminders: 'Messenger appointment reminders',
   email_notifications: 'Email notifications',
   basic_reporting: 'Reporting',
 }
@@ -59,7 +60,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     tagline: 'Booking automation for growing businesses.',
     monthlyAppointments: null,
     providerLimit: null,
-    features: ['email_notifications', 'basic_reporting', 'messenger_booking_bot'],
+    features: ['email_notifications', 'basic_reporting', 'messenger_booking_bot', 'messenger_reminders'],
   },
 }
 
@@ -111,6 +112,7 @@ export const PLAN_BULLETS: Record<PlanTier, string[]> = {
     'Everything in Basic',
     'Unlimited staff logins',
     'Messenger booking bot',
+    'Messenger appointment reminders',
   ],
 }
 
@@ -121,7 +123,7 @@ export const PLAN_BULLETS: Record<PlanTier, string[]> = {
 export const PLAN_CHECKOUT_SUMMARY: Record<PlanTier, string> = {
   free: '',
   basic: '• Unlimited appointments  • Up to 5 staff logins  • Email notifications  • Basic reporting',
-  pro: '• Unlimited appointments  • Unlimited staff logins  • Email notifications  • Basic reporting  • Messenger booking bot',
+  pro: '• Unlimited appointments  • Unlimited staff logins  • Email notifications  • Basic reporting  • Messenger booking bot  • Messenger reminders',
 }
 
 function planOf(business: Pick<Business, 'plan_tier'>): PlanConfig {
