@@ -1,6 +1,30 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { hasConfiguredHours, wallTimeToUtc, formatSlotLabel, bookAppointment } from './slots'
+import { hasConfiguredHours, wallTimeToUtc, formatSlotLabel, bookAppointment, isNextDayInTz } from './slots'
 import { createAdminSupabase } from './supabase-server'
+
+describe('isNextDayInTz', () => {
+  // 18:00 Manila on Jul 6 (the daily reminder run) = 10:00 UTC.
+  const now = new Date('2026-07-06T10:00:00Z')
+
+  it('matches appointments on the next Manila calendar day', () => {
+    expect(isNextDayInTz('2026-07-07T01:00:00Z', now, 'Asia/Manila')).toBe(true) // Jul 7, 09:00 Manila
+    expect(isNextDayInTz('2026-07-07T15:30:00Z', now, 'Asia/Manila')).toBe(true) // Jul 7, 23:30 Manila
+  })
+
+  it('rejects later today and the day after tomorrow', () => {
+    expect(isNextDayInTz('2026-07-06T12:00:00Z', now, 'Asia/Manila')).toBe(false) // Jul 6, 20:00 Manila
+    expect(isNextDayInTz('2026-07-07T16:30:00Z', now, 'Asia/Manila')).toBe(false) // Jul 8, 00:30 Manila
+  })
+
+  it('rolls over month and year boundaries', () => {
+    expect(isNextDayInTz('2027-01-01T02:00:00Z', new Date('2026-12-31T10:00:00Z'), 'Asia/Manila')).toBe(true)
+  })
+
+  it('uses the business timezone, not UTC', () => {
+    // 2026-07-07T01:00Z is still Jul 6 in New York, i.e. "today" there.
+    expect(isNextDayInTz('2026-07-07T01:00:00Z', now, 'America/New_York')).toBe(false)
+  })
+})
 
 describe('hasConfiguredHours', () => {
   it('is false with no hours set', () => {

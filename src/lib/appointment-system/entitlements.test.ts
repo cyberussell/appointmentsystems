@@ -12,6 +12,7 @@ describe('entitlements', () => {
     expect(hasFeature({ plan_tier: 'basic' }, 'email_notifications')).toBe(true)
     expect(hasFeature({ plan_tier: 'basic' }, 'basic_reporting')).toBe(true)
     expect(hasFeature({ plan_tier: 'basic' }, 'messenger_booking_bot')).toBe(false)
+    expect(hasFeature({ plan_tier: 'basic' }, 'messenger_reminders')).toBe(false)
   })
 
   it('Pro plan has every declared feature', () => {

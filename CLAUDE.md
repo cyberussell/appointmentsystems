@@ -30,7 +30,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
 - `assetPrefix: "/appointments-assets"` stops this zone's `_next/static` from colliding with the main site. Static files that must be served under that prefix live in `public/appointments-assets/`.
 - Server Actions `allowedOrigins` = `www.cyberussell.com`, `cyberussell.com`. The Origin header is the proxying domain, not the Vercel domain.
 - Absolute URLs are hard-coded to `https://www.cyberussell.com/appointments/...`: auth redirects, PayMongo success/cancel URLs, manage links, the Messenger booking-page link. Change them all together.
-- Env vars: `NEXT_PUBLIC_BOOKLYPRO_SUPABASE_URL`, `NEXT_PUBLIC_BOOKLYPRO_SUPABASE_ANON_KEY`, `BOOKLYPRO_SUPABASE_SERVICE_ROLE_KEY`, `PAYMONGO_SECRET_KEY`, `APPOINTMENTS_PAYMONGO_WEBHOOK_SECRET`, `META_APP_SECRET`, `META_VERIFY_TOKEN`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`. The `BOOKLYPRO_` prefix is a legacy name. Keep it.
+- Env vars: `NEXT_PUBLIC_BOOKLYPRO_SUPABASE_URL`, `NEXT_PUBLIC_BOOKLYPRO_SUPABASE_ANON_KEY`, `BOOKLYPRO_SUPABASE_SERVICE_ROLE_KEY`, `PAYMONGO_SECRET_KEY`, `APPOINTMENTS_PAYMONGO_WEBHOOK_SECRET`, `META_APP_SECRET`, `META_VERIFY_TOKEN`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `CRON_SECRET`. The `BOOKLYPRO_` prefix is a legacy name. Keep it.
 - Default timezone is `Asia/Manila`. Bot copy is Taglish ("po", "Salamat po"). Keep that tone in customer-facing Messenger text.
 
 ---
@@ -45,7 +45,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
 |---|---|---|---|---|
 | Free | 0 | 100 | 1 | public booking page, calendar, clients & notes, no-show tracking, services, hours, breaks/blocked dates, cancel/reschedule, manual/walk-in bookings |
 | Basic | 299 | unlimited | 5 | + `email_notifications`, `basic_reporting` |
-| Pro | 499 | unlimited | unlimited | + `messenger_booking_bot` |
+| Pro | 499 | unlimited | unlimited | + `messenger_booking_bot`, `messenger_reminders` |
 
 - Only **shipped and enforced** features may appear as `FeatureFlag`s or in `PLAN_BULLETS` / `PLAN_CHECKOUT_SUMMARY`. Don't pre-declare flags, and don't advertise "Soon" or roadmap features. Calendar sync, waitlist, SMS reminders, deposits, white label, export, recurring appointments, and memberships were removed from the pricing copy for this reason.
 - `PLAN_BULLETS` is the single source for both the landing page and the Billing tab. `PLAN_CHECKOUT_SUMMARY` is what appears on the PayMongo checkout and must list only real features.
@@ -137,6 +137,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
 - Customer self-service by reference code:
   - Can cancel or reschedule unless the booking is already `cancelled` or `completed`.
   - Rescheduling resets status to `confirmed`.
+  - A reschedule is accepted only if the chosen staff member and start time match a slot `getAvailableSlots` offers for the booking's service (7 days, limit 500). This one check enforces staff ownership, eligibility, hours, lead time and the booking window. It is also refused when the business is suspended, closed, or has no hours set.
 - Sources: `web | messenger | manual`.
 
 ### Messenger bot (`flow.ts`, `api/messenger/webhook`)
@@ -159,6 +160,12 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
   - `STAFF_{staffId}_{epochMs}`
 - If the slot is taken at confirm time, the bot shows the **same day's** other times rather than going back to day selection.
 - **Human handoff:** `mode='human'` silences the bot until staff hand back (`resumeBot`), the user sends `BOT_RESUME`, or **12 hours** of inactivity pass.
+- **Day-before reminders** (`reminders.ts`, Pro, `messenger_reminders`):
+  - Vercel Cron (`vercel.json`) calls `GET /appointments/api/cron/reminders` once a day at 10:00 UTC (18:00 Manila). The route rejects any request without `Authorization: Bearer $CRON_SECRET`.
+  - A reminder goes to every `pending`/`confirmed` appointment on **tomorrow's date in the business timezone** whose client has a `messenger_psid`. Suspended businesses and plans below Pro are skipped. Web-only clients get no reminder, because SMS isn't built.
+  - Reminders are sent with the `CONFIRMED_EVENT_UPDATE` message tag so they can go out after Messenger's 24-hour window has closed.
+  - `reminder_sent_at` makes re-runs idempotent. **Every reschedule path must reset it to `null`.**
+  - Each send logs `reminder_sent` or `reminder_failed`.
 - The webhook verifies `X-Hub-Signature-256`, routes by page id (`fb_page_id`) to the business, reads the page token from `business_secrets`, ignores echoes, and **always returns 200** so Meta doesn't retry-storm the endpoint. Errors for each entry are logged to `events`.
 - FB connection (v1): the owner pastes the Page ID and Page Access Token. Tokens live in `business_secrets`, which has RLS on and no policies, so only the service role can read them. OAuth is planned for after Meta app review.
 
@@ -214,10 +221,7 @@ It was extracted from the cyberussell.com monorepo, and it still runs as a **Nex
 - **Supabase keepalive** (free tier): the `keepalive_heartbeat` singleton is updated both by an external cron (anon key, which needs **both** the SELECT and UPDATE policies) and by the internal `pg_cron` job every 12 hours. A read-only ping does not reset the inactivity clock.
 - **Migrations:** add the next number in `appointment-system/migrations/` and end the file with the "(run in the Appointment System Supabase SQL editor)" note. Call out in the commit message that it must be run manually before the code works.
 
-## Known gaps / not built (don't advertise these)
+## Not built (don't advertise these)
 
-- Reminders: `reminder_sent_at` exists but no job sends reminders. The Messenger confirmation text ("Magre-remind kami…") promises one anyway.
-- Deposits: `deposit_*` columns exist as scaffolding only.
+- Deposits: the `deposit_*` columns are scaffolding only.
 - SMS, calendar sync, waitlist, and data export are not built.
-- `rescheduleBookingByCode` (customer self-service) doesn't re-check that the new `staffId` belongs to the business or is eligible for the service. Only the exclusion constraint guards it.
-- Signup still has temporary diagnostic `console.error` logging (commit 49483d8).

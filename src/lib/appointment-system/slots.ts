@@ -66,6 +66,14 @@ function dateInTz(date: Date, timeZone: string): { y: number; m: number; d: numb
   }
 }
 
+/** True if `iso` falls on the calendar day after `now`, both read in `timeZone`. */
+export function isNextDayInTz(iso: string, now: Date, timeZone: string): boolean {
+  const today = dateInTz(now, timeZone)
+  const tomorrow = dateInTz(new Date(Date.UTC(today.y, today.m - 1, today.d + 1, 12)), 'UTC')
+  const target = dateInTz(new Date(iso), timeZone)
+  return target.y === tomorrow.y && target.m === tomorrow.m && target.d === tomorrow.d
+}
+
 // Convert a datetime-local value ("2026-07-06T14:00") entered as business wall
 // time into a UTC Date.
 export function wallTimeToUtc(value: string, timeZone: string): Date | null {

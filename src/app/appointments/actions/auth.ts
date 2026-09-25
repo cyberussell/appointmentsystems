@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { z } from 'zod'
 import { createServerSupabase, createAdminSupabase } from '@/lib/appointment-system/supabase-server'
 import { logEvent } from '@/lib/appointment-system/events'
+import { logError } from '@/lib/appointment-system/errors'
 import { checkRateLimit, clientIp } from '@/lib/appointment-system/rateLimit'
 import { uniqueBusinessSlug } from '@/lib/appointment-system/slug'
 import type { ActionResult } from './types'
@@ -45,10 +46,7 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
       emailRedirectTo: 'https://www.cyberussell.com/appointments/login',
     },
   })
-  if (error) {
-    console.error('[signup] auth.signUp failed', { message: error.message, status: error.status, code: error.code })
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
   if (!data.user) return { error: 'Signup failed — please try again.' }
 
   // Supabase returns a fake user (empty identities) instead of an error when
@@ -66,8 +64,10 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
     .from('businesses')
     .insert({ owner_id: data.user.id, name: businessName, slug, business_types: businessTypes, selected_plan_tier: selectedPlanTier })
   if (businessError) {
-    console.error('[signup] business insert failed', { message: businessError.message, code: businessError.code, hint: businessError.hint })
-    return { error: businessError.message }
+    // Unexpected, and it leaves an auth user with no business: keep a
+    // queryable record instead of a console line.
+    await logError(admin, null, 'signup_business_insert', businessError)
+    return { error: 'Could not finish creating your account — please try again.' }
   }
 
   await logEvent(admin, null, 'business_signed_up', { business_name: businessName, slug })
